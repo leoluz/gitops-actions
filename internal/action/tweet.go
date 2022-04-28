@@ -44,6 +44,7 @@ func (t *Tweet) Execute() error {
 	}
 	httpRequest.Header.Add("Content-type", "application/json")
 	t.cfg.service.Sign(httpRequest, t.cfg.userConfig)
+	log.Println("creating tweet")
 	resp, err := httpClient.Do(httpRequest)
 	if err != nil {
 		return fmt.Errorf("error sending tweet request: %s", err)

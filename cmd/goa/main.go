@@ -36,14 +36,20 @@ const (
 func main() {
 	cfg := readConfig()
 	reg := initRegistry(cfg)
+	log.Printf("Starting gitops-actions in %s", cfg.RepoURL)
+	log.Printf("base commit SHA: %s", cfg.BaseSHA)
+	log.Printf("event commit SHA: %s", cfg.EventSHA)
+
 	actions, err := buildActions(reg, cfg)
 	if err != nil {
 		log.Fatalf("error building actions: %s", err)
 	}
+	log.Println("starting executing actions")
 	err = run(actions)
 	if err != nil {
 		log.Fatalf("error running actions: %s", err)
 	}
+	log.Printf("%d actions executed", len(actions))
 }
 
 func readConfig() Config {
@@ -67,6 +73,7 @@ func buildActions(reg *action.Registry, cfg Config) ([]action.Action, error) {
 	if err != nil {
 		return nil, err
 	}
+	log.Printf("found %d new files", len(newFiles))
 
 	actions := []action.Action{}
 	for _, file := range newFiles {
@@ -86,6 +93,7 @@ func buildActions(reg *action.Registry, cfg Config) ([]action.Action, error) {
 				}
 				action := actionCreator.NewAction(string(content))
 				actions = append(actions, action)
+				log.Printf("action added for file %s", file)
 			}
 		}
 	}

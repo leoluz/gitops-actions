@@ -19,5 +19,3 @@ RUN mkdir /app
 WORKDIR /app
 
 COPY --from=builder /app/goa /usr/local/bin/
-
-CMD ["/usr/local/bin/goa"]
