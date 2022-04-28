@@ -36,3 +36,13 @@ func NewFiles(cloneDir, fromSHA, toSHA string, timeout time.Duration) ([]string,
 	}
 	return strings.Split(res.StdOut, "\n"), nil
 }
+
+func Checkout(cloneDir, refName string, timeout time.Duration) error {
+	cmd := exec.Command("git", "checkout", refName)
+	cmd.Dir = cloneDir
+	res, err := command.Run(cmd, timeout)
+	if err != nil {
+		return fmt.Errorf("error executing command %q: %s: stderr: %s", cmd.String(), err, res.StdErr)
+	}
+	return nil
+}

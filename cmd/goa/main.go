@@ -18,6 +18,7 @@ import (
 type Config struct {
 	BaseSHA                  string        `required:"true" split_words:"true"`
 	EventSHA                 string        `required:"true" split_words:"true"`
+	EventRefName             string        `required:"true" split_words:"true"`
 	RepoURL                  string        `required:"true" split_words:"true"`
 	ActionDir                string        `default:"go-actions" split_words:"true"`
 	CloneDir                 string        `default:"/app/repo" split_words:"true"`
@@ -49,7 +50,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("error running actions: %s", err)
 	}
-	log.Printf("%d actions executed", len(actions))
+	log.Printf("total actions executed: %d", len(actions))
 }
 
 func readConfig() Config {
@@ -73,7 +74,7 @@ func buildActions(reg *action.Registry, cfg Config) ([]action.Action, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("found %d new files", len(newFiles))
+	log.Printf("number of new files found: %d", len(newFiles))
 
 	actions := []action.Action{}
 	for _, file := range newFiles {
@@ -109,6 +110,11 @@ func getNewFiles(c Config) ([]string, error) {
 	err = git.Clone(c.RepoURL, c.CloneDir, c.CmdTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("error cloning repo %s: %s", c.RepoURL, err)
+	}
+
+	err = git.Checkout(c.CloneDir, c.EventRefName, c.CmdTimeout)
+	if err != nil {
+		return nil, fmt.Errorf("error checking out refName %s: %s", c.EventRefName, err)
 	}
 
 	files, err := git.NewFiles(c.CloneDir, c.BaseSHA, c.EventSHA, c.CmdTimeout)
