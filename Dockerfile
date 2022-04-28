@@ -8,9 +8,8 @@ ADD go.sum ./
 RUN go mod download
 
 ADD cmd ./cmd
-RUN CGO_ENABLED=1 GOOS=linux go build ./cmd/goa
-RUN ls -la
-
+ADD internal ./internal
+RUN CGO_ENABLED=0 GOOS=linux go build ./cmd/goa
 
 FROM alpine:3.15
 
