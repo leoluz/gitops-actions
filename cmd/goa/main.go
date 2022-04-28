@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -78,7 +79,8 @@ func buildActions(reg *action.Registry, cfg Config) ([]action.Action, error) {
 					log.Printf("action %q not found in registry: skipping file %q", actionName, file)
 					continue
 				}
-				content, err := ioutil.ReadFile(file)
+				fullFilePath := filepath.Join(cfg.CloneDir, file)
+				content, err := ioutil.ReadFile(fullFilePath)
 				if err != nil {
 					return nil, fmt.Errorf("error reading file %q: %s", file, err)
 				}
