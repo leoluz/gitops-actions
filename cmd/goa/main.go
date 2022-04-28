@@ -2,7 +2,10 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/kelseyhightower/envconfig"
@@ -42,29 +45,6 @@ func main() {
 	}
 }
 
-func run(actions []action.Action) error {
-	for _, action := range actions {
-		err := action.Execute()
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func buildActions(reg *action.Registry, cfg Config) ([]action.Action, error) {
-	newFiles, err := getNewFiles(cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	actions := []action.Action{}
-	for _, file := range newFiles {
-		log.Print(file)
-	}
-	return actions, nil
-}
-
 func readConfig() Config {
 	var c Config
 	err := envconfig.Process(EnvPrefix, &c)
@@ -79,6 +59,35 @@ func initRegistry(c Config) *action.Registry {
 	registry := action.NewRegistry()
 	registry.Add(TweetAction, tc)
 	return registry
+}
+
+func buildActions(reg *action.Registry, cfg Config) ([]action.Action, error) {
+	newFiles, err := getNewFiles(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	actions := []action.Action{}
+	for _, file := range newFiles {
+		if strings.HasPrefix(file, cfg.ActionDir) {
+			dirs := strings.Split(file, string(os.PathSeparator))
+			if len(dirs) > 2 {
+				actionName := dirs[1]
+				actionCreator := reg.Get(actionName)
+				if actionCreator == nil {
+					log.Printf("action %q not found in registry: skipping file %q", actionName, file)
+					continue
+				}
+				content, err := ioutil.ReadFile(file)
+				if err != nil {
+					return nil, fmt.Errorf("error reading file %q: %s", file, err)
+				}
+				action := actionCreator.NewAction(string(content))
+				actions = append(actions, action)
+			}
+		}
+	}
+	return actions, nil
 }
 
 func getNewFiles(c Config) ([]string, error) {
@@ -97,4 +106,14 @@ func getNewFiles(c Config) ([]string, error) {
 		return nil, fmt.Errorf("error checking for new files: %s", err)
 	}
 	return files, nil
+}
+
+func run(actions []action.Action) error {
+	for _, action := range actions {
+		err := action.Execute()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
