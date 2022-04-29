@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/kurrik/oauth1a"
+	"github.com/leoluz/gitops-actions/internal/git"
 )
 
 const (
@@ -21,24 +22,47 @@ type TwitterConfig struct {
 }
 
 type Tweet struct {
-	Text string         `json:"text"`
-	cfg  *TwitterConfig `json:"-"`
+	file *git.File
+	cfg  *TwitterConfig
 }
 
-func (cfg *TwitterConfig) NewAction(text string) Action {
+type PostTweetPayload struct {
+	Text string `json:"text"`
+}
+
+func ToTweetPayload(file *git.File) (*PostTweetPayload, error) {
+	content, err := ioutil.ReadFile(file.GetFullpath())
+	if err != nil {
+		return nil, fmt.Errorf("error reading file %s: %s", file.GetFullpath(), err)
+	}
+	return &PostTweetPayload{
+		Text: string(content),
+	}, nil
+}
+
+func (cfg *TwitterConfig) NewAction(file *git.File) Action {
 	return &Tweet{
-		Text: text,
+		file: file,
 		cfg:  cfg,
 	}
 }
 
 func (t *Tweet) Execute() error {
+	if t.file.GetStatus() != git.StatusAdded {
+		log.Println("tweets are just created for new files: skipping %s", t.file.GetName())
+		return nil
+	}
 	httpClient := new(http.Client)
-	payload, err := json.Marshal(t)
+	tweet, err := ToTweetPayload(t.file)
+	if err != nil {
+		return fmt.Errorf("error creating tweet payload: %s", err)
+	}
+
+	jsonPayload, err := json.Marshal(tweet)
 	if err != nil {
 		return fmt.Errorf("error marshaling tweet payload: %s", err)
 	}
-	httpRequest, err := http.NewRequest("POST", TweetEndpoint, bytes.NewReader(payload))
+	httpRequest, err := http.NewRequest("POST", TweetEndpoint, bytes.NewReader(jsonPayload))
 	if err != nil {
 		return fmt.Errorf("error building tweet request: %s", err)
 	}

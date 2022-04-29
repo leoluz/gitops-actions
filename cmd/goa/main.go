@@ -2,11 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
-	"os"
-	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/kelseyhightower/envconfig"
@@ -62,6 +58,14 @@ func readConfig() Config {
 	return c
 }
 
+func buildActions(reg *action.Registry, cfg Config) ([]action.Action, error) {
+	files, err := getGitFiles(cfg)
+	if err != nil {
+		return nil, err
+	}
+	return action.BuildActions(reg, cfg.ActionDir, files)
+}
+
 func initRegistry(c Config) *action.Registry {
 	tc := action.NewTwitterConfig(c.TwitterConsumerKey, c.TwitterConsumerSecret, c.TwitterAccessToken, c.TwitterAccessTokenSecret)
 	registry := action.NewRegistry()
@@ -69,39 +73,7 @@ func initRegistry(c Config) *action.Registry {
 	return registry
 }
 
-func buildActions(reg *action.Registry, cfg Config) ([]action.Action, error) {
-	newFiles, err := getNewFiles(cfg)
-	if err != nil {
-		return nil, err
-	}
-	log.Printf("number of new files found: %d", len(newFiles))
-
-	actions := []action.Action{}
-	for _, file := range newFiles {
-		if strings.HasPrefix(file, cfg.ActionDir) {
-			dirs := strings.Split(file, string(os.PathSeparator))
-			if len(dirs) > 2 {
-				actionName := dirs[1]
-				actionCreator := reg.Get(actionName)
-				if actionCreator == nil {
-					log.Printf("action %q not found in registry: skipping file %q", actionName, file)
-					continue
-				}
-				fullFilePath := filepath.Join(cfg.CloneDir, file)
-				content, err := ioutil.ReadFile(fullFilePath)
-				if err != nil {
-					return nil, fmt.Errorf("error reading file %q: %s", file, err)
-				}
-				action := actionCreator.NewAction(string(content))
-				actions = append(actions, action)
-				log.Printf("action added for file %s", file)
-			}
-		}
-	}
-	return actions, nil
-}
-
-func getNewFiles(c Config) ([]string, error) {
+func getGitFiles(c Config) ([]*git.File, error) {
 	gitVersion, err := git.Version(c.CmdTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("error checking git version: %s", err)
@@ -117,9 +89,9 @@ func getNewFiles(c Config) ([]string, error) {
 		return nil, fmt.Errorf("error checking out refName %s: %s", c.EventRefName, err)
 	}
 
-	files, err := git.NewFiles(c.CloneDir, c.BaseSHA, c.EventSHA, c.CmdTimeout)
+	files, err := git.GetFiles(c.CloneDir, c.BaseSHA, c.EventSHA, c.CmdTimeout)
 	if err != nil {
-		return nil, fmt.Errorf("error checking for new files: %s", err)
+		return nil, fmt.Errorf("error getting git files: %s", err)
 	}
 	return files, nil
 }
