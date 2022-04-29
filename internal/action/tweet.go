@@ -49,7 +49,7 @@ func (cfg *TwitterConfig) NewAction(file *git.File) Action {
 
 func (t *Tweet) Execute() error {
 	if t.file.GetStatus() != git.StatusAdded {
-		log.Println("tweets are just created for new files: skipping %s file %s", t.file.GetStatus().String(), t.file.GetName())
+		log.Printf("tweets are just created for new files: skipping %s file %s", t.file.GetStatus().String(), t.file.GetName())
 		return nil
 	}
 	httpClient := new(http.Client)
