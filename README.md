@@ -25,8 +25,8 @@ triggered by a git event. A few examples of actions are:
 
 Basically anything that exposes an API can be implemented as an action.
 
-Check the existing actions and how to proper configure them in the Actions
-section bellow.
+Check the existing actions and how to proper configure them in the
+[Actions](#actions) section bellow.
 
 # How
 
@@ -72,15 +72,17 @@ jobs:
 
 ## Tweet
 
-The Tweet Action allows creating tweets based on git events like merging a file
+The Tweet action allows creating tweets based on git events like merging a file
 in the `main` branch for example. For this action to work, it requires a twitter
-account configured with an application that will be allowed to tweet on
-behalf of that user. 
+account configured with an application that will be allowed to tweet on behalf
+of that user. 
 
 ### Twitter Configuration
 
-In order to create that application access
-https://developer.twitter.com/ and follow the steps:
+In order to register a Twitter application enable a developer access in your
+Twitter account by accessing https://developer.twitter.com/ and signing up.
+
+Once the developer account is active, follow the steps bellow:
 
 - Create a new project. Example: `Gitops-Actions`
 - Under the created project, create a new application. Example: `GitTweet`
@@ -137,4 +139,5 @@ jobs:
 
 Once this is done, every new file created under `go-actions/tweet` folder will
 have its content publised in the configured Twitter account once merged in the
-`main` branch 
+`main` branch. Check [this repo](https://github.com/leoluz/kube-tests) for a
+working example.
