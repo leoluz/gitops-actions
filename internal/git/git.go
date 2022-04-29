@@ -38,6 +38,10 @@ func (f *File) GetStatus() GitStatus {
 	return f.status
 }
 
+func (s GitStatus) String() string {
+	return string(s)
+}
+
 func NewFile(name, cloneDir string, status GitStatus) *File {
 	return &File{
 		name:     name,
