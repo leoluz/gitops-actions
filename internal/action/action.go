@@ -59,7 +59,7 @@ func BuildActions(reg *Registry, actionsDir string, files []*git.File) ([]Action
 				}
 				action := actionCreator.NewAction(file)
 				actions = append(actions, action)
-				log.Printf("%s action added for file %s", actionName, file.GetName())
+				log.Printf("%s action created for %s file %s", actionName, file.GetStatus().String(), file.GetName())
 			}
 		}
 	}
